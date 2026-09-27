@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>PADIS 床邊評估</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF1F0; --surface:#FFFFFF; --surface-2:#F5F8F7; --ink:#14212A; --muted:#55666D; --line:#D2DBDA;
+  --accent:#0B6E69; --accent-ink:#FFFFFF; --accent-soft:#DCEEEC;
+  --ok:#2A7549; --ok-soft:#E0F0E6; --warn:#9A5700; --warn-soft:#FAEBD3; --crit:#B42318; --crit-soft:#FBE2DE;
+  --strip:#12202A; --strip-ink:#E6EEF0; --strip-muted:#93A7AF; --strip-line:#2B3D47; --strip-accent:#43C4B8;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --f-label:"IBM Plex Sans Condensed","Noto Sans TC","Arial Narrow",sans-serif;
+  --f-num:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0B1114; --surface:#131C20; --surface-2:#182328; --ink:#E2EAEC; --muted:#93A4AA; --line:#26353B;
+    --accent:#3CBDB2; --accent-ink:#06201E; --accent-soft:#12332F;
+    --ok:#5CC48E; --ok-soft:#12301F; --warn:#F0AA45; --warn-soft:#352409; --crit:#F2685F; --crit-soft:#3A1512;
+    --strip:#070D10; --strip-ink:#E2EAEC; --strip-muted:#8397A0; --strip-line:#223139; --strip-accent:#43C4B8;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0B1114; --surface:#131C20; --surface-2:#182328; --ink:#E2EAEC; --muted:#93A4AA; --line:#26353B;
+  --accent:#3CBDB2; --accent-ink:#06201E; --accent-soft:#12332F;
+  --ok:#5CC48E; --ok-soft:#12301F; --warn:#F0AA45; --warn-soft:#352409; --crit:#F2685F; --crit-soft:#3A1512;
+  --strip:#070D10; --strip-ink:#E2EAEC; --strip-muted:#8397A0; --strip-line:#223139; --strip-accent:#43C4B8;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+h1,h2,h3{margin:0;text-wrap:balance;line-height:1.3}
+p{margin:0}
+a{color:var(--accent)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:16px}
+.label{font-family:var(--f-label);font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+
+/* strip */
+.strip{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--strip);color:var(--strip-ink);border-bottom:1px solid var(--strip-line)}
+.top{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;justify-content:space-between;padding-block:10px 8px}
+.brand h1{font-family:var(--f-label);font-size:20px;font-weight:700}
+.brand p{font-size:12px;color:var(--strip-muted)}
+.when{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.when input{background:transparent;border:1px solid var(--strip-line);border-radius:6px;padding:5px 8px;color:var(--strip-ink);font-family:var(--f-num);font-size:14px;color-scheme:dark}
+.seg{display:inline-flex;border:1px solid var(--strip-line);border-radius:8px;overflow:hidden}
+.seg button{background:transparent;border:0;color:var(--strip-ink);padding:5px 12px;cursor:pointer;font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--strip-accent);color:#06201E;font-weight:600}
+.beds-scroll{overflow-x:auto;padding-bottom:10px;color-scheme:dark}
+.beds{display:flex;gap:6px;width:max-content;min-width:100%}
+.bedbtn{display:grid;justify-items:center;gap:2px;min-width:56px;padding:4px 6px 5px;border-radius:8px;border:1px solid var(--strip-line);background:transparent;color:var(--strip-ink);cursor:pointer;font-family:var(--f-num);font-weight:700;font-size:15px}
+.bedbtn small{font-family:var(--f-body);font-weight:500;font-size:10.5px;color:var(--strip-muted);white-space:nowrap}
+.bedbtn[aria-current="true"]{background:var(--strip-ink);color:var(--strip);border-color:var(--strip-ink)}
+.bedbtn[aria-current="true"] small{color:var(--strip)}
+.bedbtn.s-ok{border-color:#5CC48E}.bedbtn.s-alert{border-color:#F2685F}.bedbtn.s-part{border-color:#F0AA45}
+
+main{padding-block:18px 48px;display:grid;gap:20px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;align-items:start}
+@media (max-width:980px){.layout{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;cursor:pointer;font-weight:500;font-size:14px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.small{padding:4px 10px;font-size:13px}
+.btn.danger{border-color:var(--crit);color:var(--crit)}
+.linkbtn{background:none;border:0;padding:0;color:var(--accent);cursor:pointer;font-size:13.5px;text-decoration:underline;text-underline-offset:3px}
+.toast{font-size:13px;color:var(--ok)}
+
+/* tabs */
+.tabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:2px solid var(--line);margin-bottom:14px}
+.tab{display:flex;align-items:center;gap:8px;border:0;background:transparent;padding:8px 14px 10px;cursor:pointer;font-weight:600;font-size:15px;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px}
+.tab b{font-family:var(--f-label);width:22px;height:22px;border-radius:6px;display:grid;place-items:center;background:var(--surface-2);border:1px solid var(--line);font-size:13px;color:var(--muted)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab[aria-selected="true"] b{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tab i{width:8px;height:8px;border-radius:50%;background:transparent}
+.tab i.ok{background:var(--ok)}.tab i.alert{background:var(--crit)}.tab i.part{background:var(--warn)}
+.mod{display:grid;gap:14px}
+.mod h2{font-size:18px;font-weight:700}
+.modhead{display:flex;justify-content:space-between;align-items:end;gap:10px;flex-wrap:wrap}
+.modhead span{font-size:12px;color:var(--muted)}
+.opts{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.opts button{border:0;background:var(--surface);padding:6px 14px;cursor:pointer;font-size:14px}
+.opts button+button{border-left:1px solid var(--line)}
+.opts button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.toggle{display:inline-flex;align-items:center;gap:8px;font-size:14px;cursor:pointer}
+.toggle input{width:17px;height:17px;accent-color:var(--accent)}
+
+/* scoring */
+.item{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.item>header{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 14px;background:var(--surface-2);border-bottom:1px solid var(--line)}
+.item>header h3{font-size:15px;font-weight:700}
+.item>header .num{color:var(--muted);font-size:13px}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.choice{display:grid;gap:2px;text-align:left;border:0;border-right:1px solid var(--line);border-top:1px solid var(--line);background:var(--surface);padding:10px 12px;cursor:pointer;margin:-1px 0 0 0}
+.choice:hover{background:var(--surface-2)}
+.choice .sc{font-family:var(--f-num);font-weight:700;font-size:18px;color:var(--muted)}
+.choice .nm{font-weight:600;font-size:14.5px}
+.choice .ds{font-size:12.5px;color:var(--muted);line-height:1.45}
+.choice[aria-pressed="true"]{background:var(--accent-soft);box-shadow:inset 0 0 0 2px var(--accent)}
+.choice[aria-pressed="true"] .sc{color:var(--accent)}
+.nrs{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:4px}
+.nrs button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:10px 0;cursor:pointer;font-family:var(--f-num);font-weight:700;font-size:16px}
+.nrs button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.nrs-l{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.result{display:grid;gap:8px;border-radius:12px;padding:14px 16px;background:var(--surface);border:1px solid var(--line)}
+.result.ok{background:var(--ok-soft);border-color:transparent}
+.result.alert{background:var(--crit-soft);border-color:transparent}
+.result.part{background:var(--warn-soft);border-color:transparent}
+.result .big{font-family:var(--f-num);font-size:26px;font-weight:700;line-height:1.1}
+.result .big small{font-size:14px;font-weight:500;color:var(--muted);font-family:var(--f-body)}
+.result ul{margin:0;padding-left:18px;display:grid;gap:4px;font-size:14px}
+.note{font-size:14px;border-radius:8px;padding:9px 12px;background:var(--surface-2);border:1px solid var(--line)}
+.note.accent{background:var(--accent-soft);border-color:transparent}
+.note ul{margin:6px 0 0;padding-left:18px;display:grid;gap:3px}
+.tag{display:inline-block;font-family:var(--f-label);font-size:11px;font-weight:600;letter-spacing:.04em;border:1px solid var(--accent);color:var(--accent);border-radius:4px;padding:0 5px;margin-left:4px;vertical-align:1px}
+
+/* RASS */
+.rass{display:grid;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.rrow{display:grid;grid-template-columns:52px 120px 1fr;gap:10px;align-items:center;border:0;border-top:1px solid var(--line);background:var(--surface);padding:7px 12px;text-align:left;cursor:pointer}
+.rrow:first-child{border-top:0}
+.rrow:hover{background:var(--surface-2)}
+.rrow .v{font-family:var(--f-num);font-weight:700;font-size:17px}
+.rrow .n{font-weight:600}
+.rrow .d{font-size:13px;color:var(--muted)}
+.rrow.tgt{background:color-mix(in srgb,var(--ok-soft) 70%,var(--surface))}
+.rrow[aria-pressed="true"]{box-shadow:inset 4px 0 0 var(--accent);background:var(--accent-soft)}
+@media (max-width:560px){.rrow{grid-template-columns:44px 1fr}.rrow .d{grid-column:2}}
+.wiz{display:grid;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px}
+.wiz .q{font-weight:600}
+.wiz .btns{display:flex;flex-wrap:wrap;gap:6px}
+.wiz .btns button{border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:14px;text-align:left}
+.wiz .btns button:hover{border-color:var(--accent)}
+.wiz .btns b{font-family:var(--f-num);margin-right:6px}
+.split{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;align-items:start}
+.fld{display:grid;gap:3px}
+.fld label{font-size:13px;color:var(--muted)}
+.fld select{border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:6px 9px;max-width:100%}
+.cks{display:grid;gap:2px}
+.ck{display:flex;gap:10px;align-items:flex-start;padding:6px 8px;border-radius:8px;cursor:pointer;font-size:14.5px}
+.ck:hover{background:var(--surface-2)}
+.ck input{margin-top:4px;width:17px;height:17px;accent-color:var(--accent);flex:none}
+.ck small{display:block;color:var(--muted);font-size:12.5px}
+.ck.pos:has(input:checked){background:var(--ok-soft)}
+.ck.neg input{accent-color:var(--crit)}
+.ck.neg:has(input:checked){background:var(--crit-soft)}
+
+/* CAM */
+.feat{display:grid;grid-template-columns:36px minmax(0,1fr);gap:0 12px;position:relative;padding-bottom:12px}
+.feat::before{content:"";position:absolute;left:17px;top:36px;bottom:0;width:2px;background:var(--line)}
+.feat:last-child::before{display:none}
+.fnode{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-num);font-weight:700;background:var(--surface);border:2px solid var(--line);color:var(--muted);z-index:1}
+.feat[data-s="pos"] .fnode{background:var(--crit);border-color:var(--crit);color:var(--surface)}
+.feat[data-s="neg"] .fnode{background:var(--ok);border-color:var(--ok);color:var(--surface)}
+.feat[data-s="cur"] .fnode{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.fcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:8px;min-width:0}
+.feat[data-s="skip"] .fcard{border-style:dashed;color:var(--muted)}
+.feat[data-s="cur"] .fcard{border-color:var(--accent)}
+.fcard h3{font-size:15.5px;font-weight:700;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.fcard .fs{font-size:12.5px;font-weight:600;border-radius:999px;padding:1px 9px}
+.fs.pos{background:var(--crit-soft);color:var(--crit)}.fs.neg{background:var(--ok-soft);color:var(--ok)}.fs.cur{background:var(--accent-soft);color:var(--accent)}
+.letters{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px}
+.letters button{display:grid;gap:2px;justify-items:center;border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:8px 0 6px;cursor:pointer}
+.letters button b{font-family:var(--f-num);font-size:20px}
+.letters button small{font-size:10.5px;color:var(--muted)}
+.letters button.isA b{color:var(--accent)}
+.letters button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.letters button[aria-pressed="true"] small,.letters button[aria-pressed="true"].isA b{color:var(--accent-ink)}
+.qs{display:grid;gap:6px}
+.qrow{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;font-size:14.5px}
+.yn{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.yn button{border:0;background:var(--surface);padding:5px 12px;cursor:pointer;font-size:14px}
+.yn button+button{border-left:1px solid var(--line)}
+.yn button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.errs{font-family:var(--f-num);font-size:13px;color:var(--muted)}
+.icdsc{display:grid;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.irow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 14px;border-top:1px solid var(--line)}
+.irow:first-child{border-top:0}
+.irow small{display:block;color:var(--muted);font-size:12.5px}
+
+/* side */
+.side{display:grid;gap:16px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 118px)}
+@media (max-width:980px){.side{position:static}}
+.side h2{font-size:16px;font-weight:700}
+.sum{display:grid;gap:6px}
+.srow{display:grid;grid-template-columns:52px 1fr;gap:10px;align-items:baseline;font-size:14px}
+.srow .k{font-family:var(--f-label);font-weight:600;color:var(--muted);font-size:12.5px;letter-spacing:.04em}
+.srow .v.ok{color:var(--ok)}.srow .v.alert{color:var(--crit);font-weight:700}.srow .v.part{color:var(--warn)}.srow .v.na{color:var(--muted)}
+.trend-wrap{overflow-x:auto}
+table{border-collapse:collapse;font-size:12.5px;width:100%}
+th,td{padding:4px 6px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+th{font-family:var(--f-label);color:var(--muted);font-weight:600}
+td:first-child,th:first-child{text-align:left}
+td.alert{color:var(--crit);font-weight:700}td.ok{color:var(--ok)}
+textarea.buf{width:100%;height:130px;border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:8px;font-family:var(--f-num);font-size:12.5px}
+textarea.note-in{width:100%;min-height:64px;border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:8px}
+.confirm{display:inline-flex;gap:6px;align-items:center;font-size:13px;color:var(--crit);flex-wrap:wrap}
+footer{border-top:1px solid var(--line);padding-top:16px;display:grid;gap:10px;font-size:13px;color:var(--muted)}
+footer ol{margin:0;padding-left:20px;display:grid;gap:3px}
+.disclaimer{background:var(--warn-soft);color:var(--ink);border-radius:10px;padding:10px 14px;font-size:13.5px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="strip">
+  <div class="wrap top">
+    <div class="brand"><h1>PADIS 床邊評估</h1><p>疼痛 · 鎮靜 · 譫妄 · 活動 · 睡眠 — SCCM PADIS 2018 ＋ 2025</p></div>
+    <div class="when">
+      <input type="date" id="date" aria-label="評估日期">
+      <div class="seg" role="group" aria-label="班別" id="shifts"></div>
+    </div>
+  </div>
+  <div class="wrap"><div class="beds-scroll"><div class="beds" id="beds"></div></div></div>
+</header>
+
+<div class="wrap">
+<main>
+  <div class="layout">
+    <div>
+      <div class="tabs" role="tablist" id="tabs"></div>
+      <div id="mod"></div>
+    </div>
+    <aside class="side" id="side"></aside>
+  </div>
+  <footer>
+    <div class="disclaimer"><b>僅供臨床評估輔助與教學，不取代臨床判斷。</b>資料只存在這台裝置的瀏覽器，不會上傳；請只記錄床號，勿輸入姓名或病歷號。藥物選擇與劑量請依院內規範。CAM-ICU 注意力測試請使用院內核可的中文版本。</div>
+    <div>
+      <span class="label">依據</span>
+      <ol>
+        <li>Devlin JW, Skrobik Y, Gélinas C, et al. Clinical practice guidelines for the prevention and management of pain, agitation/sedation, delirium, immobility, and sleep disruption in adult patients in the ICU (PADIS). <i>Crit Care Med</i> 2018;46:e825–e873。</li>
+        <li>Lewis K, Balas MC, Stollings JL, et al. A focused update to the clinical practice guidelines for the prevention and management of pain, anxiety, agitation/sedation, delirium, immobility, and sleep disruption in adult patients in the ICU. <i>Crit Care Med</i> 2025;53:e711–e727. <a href="https://doi.org/10.1097/CCM.0000000000006574">doi:10.1097/CCM.0000000000006574</a></li>
+        <li>Gélinas C, et al. Critical-Care Pain Observation Tool (CPOT). <i>Am J Crit Care</i> 2006;15:420–427；Payen JF, et al. Behavioral Pain Scale (BPS). <i>Crit Care Med</i> 2001;29:2258–2263。</li>
+        <li>Sessler CN, et al. Richmond Agitation-Sedation Scale. <i>Am J Respir Crit Care Med</i> 2002;166:1338–1344。</li>
+        <li>Ely EW, et al. CAM-ICU. <i>JAMA</i> 2001;286:2703–2710；Bergeron N, et al. ICDSC. <i>Intensive Care Med</i> 2001;27:859–864。</li>
+        <li>Hodgson C, et al. ICU Mobility Scale. <i>Heart Lung</i> 2014;43:19–24；Hodgson CL, et al. Expert consensus on safety criteria for active mobilisation. <i>Crit Care</i> 2014;18:658。</li>
+      </ol>
+    </div>
+  </footer>
+</main>
+</div>
+
+<script>
+(function(){
+const KEY='padis-v1';
+const pad=x=>String(x).padStart(2,'0');
+const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const parseD=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);};
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const NOW=new Date(),TODAY=ymd(NOW);
+const SHIFTS=[['D','白班'],['E','小夜'],['N','大夜']];
+const curShift=()=>{const h=new Date().getHours();return h>=8&&h<16?'D':h>=16?'E':'N';};
+const defS=()=>({beds:Array.from({length:12},(_,i)=>String(i+1)),bed:'1',tab:'P',rec:{}});
+let S;
+try{S=Object.assign(defS(),JSON.parse(localStorage.getItem(KEY)||'{}'));}catch(e){S=defS();}
+if(!Array.isArray(S.beds)||!S.beds.length)S.beds=defS().beds;
+if(!S.beds.includes(S.bed))S.bed=S.beds[0];
+if(!S.rec||typeof S.rec!=='object')S.rec={};
+S.date=TODAY;S.shift=curShift();
+function save(){try{localStorage.setItem(KEY,JSON.stringify({beds:S.beds,bed:S.bed,tab:S.tab,rec:S.rec}));}catch(e){}}
+
+/* ---------- 量表 ---------- */
+const CPOT=[
+ {k:'face',t:'臉部表情',o:[['放鬆、自然','沒有肌肉緊繃'],['緊繃','皺眉、眉頭下壓、眼眶緊縮'],['扭曲','以上皆有，加上眼瞼緊閉']]},
+ {k:'body',t:'身體動作',o:[['沒有動作或姿勢正常','完全沒有動作，不代表沒有疼痛'],['保護性動作','動作緩慢謹慎、觸摸或摩擦疼痛部位、藉動作引起注意'],['躁動不安','拉扯管路、想坐起、四肢揮動、不聽指令、攻擊醫護、想爬下床']]},
+ {k:'vent',t:'呼吸器順從度（插管）',o:[['可耐受呼吸器或動作','警報未響，通氣順暢'],['咳嗽但可耐受','咳嗽，警報可能響但會自行停止'],['對抗呼吸器','不同步、阻擋通氣，警報頻繁']],alt:{t:'發聲（未插管）',o:[['正常音量說話或不出聲',''],['嘆氣、呻吟',''],['哭喊、啜泣','']]}},
+ {k:'musc',t:'肌肉張力（被動屈伸上肢）',o:[['放鬆','被動運動時沒有阻力'],['緊繃、僵硬','被動運動時有阻力'],['非常緊繃或僵硬','阻力很大，無法完成被動運動']]}];
+const BPS=[
+ {k:'face',t:'臉部表情',o:[['放鬆',''],['部分緊繃','例如眉頭下壓'],['完全緊繃','例如眼瞼緊閉'],['扭曲','']]},
+ {k:'limb',t:'上肢',o:[['沒有動作',''],['部分彎曲',''],['完全彎曲，手指屈曲',''],['持續回縮','']]},
+ {k:'vent',t:'呼吸器順從度（插管）',o:[['可耐受',''],['咳嗽，但多數時間可耐受',''],['對抗呼吸器',''],['無法控制通氣','']],alt:{t:'發聲（未插管，BPS-NI）',o:[['沒有疼痛相關發聲',''],['偶爾呻吟','每分鐘 ≤3 次且每次 ≤3 秒'],['頻繁呻吟','每分鐘 >3 次或每次 >3 秒'],['吼叫或抱怨痛，或屏住呼吸','']]}}];
+const RASS=[
+ ['+4','好戰','明顯好戰、暴力，立即危及醫護人員'],
+ ['+3','非常躁動','拉扯或拔除管路，具攻擊性'],
+ ['+2','躁動','頻繁無目的的動作，對抗呼吸器'],
+ ['+1','不安','焦慮，但動作不具攻擊性或不激烈'],
+ ['0','清醒平靜',''],
+ ['-1','嗜睡','未完全清醒，叫喚能持續睜眼並有眼神接觸 ≥10 秒'],
+ ['-2','輕度鎮靜','叫喚能短暫睜眼並有眼神接觸 <10 秒'],
+ ['-3','中度鎮靜','叫喚有動作或睜眼，但沒有眼神接觸'],
+ ['-4','深度鎮靜','叫喚沒有反應，但身體刺激有動作或睜眼'],
+ ['-5','無法喚醒','叫喚與身體刺激都沒有反應']];
+const TARGETS={light:{t:'淺鎮靜',lo:-2,hi:1,d:'RASS −2～+1（PADIS 建議多數插管病人採淺鎮靜）'},calm:{t:'清醒平靜',lo:-1,hi:0,d:'RASS −1～0'},deep:{t:'深鎮靜',lo:-5,hi:-4,d:'RASS −4～−5，需有明確適應症'}};
+const DEEP_WHY=['','重度 ARDS 使用神經肌肉阻斷劑','重積性癲癇','顱內壓升高','目標體溫管理','其他（備註說明）'];
+const LET='SAVEAHAART'.split('');
+const CAMQ=[['石頭會浮在水面上嗎？','n'],['海裡有魚嗎？','y'],['一公斤比兩公斤重嗎？','n'],['可以用鐵鎚敲釘子嗎？','y']];
+const ICDSC=[
+ ['loc','意識程度改變','嗜睡需輕中度刺激才有反應，或過度警覺（對深度鎮靜、昏迷者不評估）'],
+ ['inatt','注意力不集中','難以跟上對話或指令，容易被外界刺激分心，難以轉移注意力'],
+ ['disor','定向感障礙','對時間、地點或人物有明顯錯誤'],
+ ['psych','幻覺、妄想或精神病症狀','例如抓空氣中的東西、明顯的妄想'],
+ ['psymo','精神運動性躁動或遲緩','需鎮靜或約束的躁動，或明顯的活動遲緩'],
+ ['speech','言語或情緒不恰當','言語不連貫、不恰當，或情緒與情境不符'],
+ ['sleep','睡眠週期障礙','夜間睡眠少於 4 小時、夜間常醒、白天大多在睡'],
+ ['fluct','症狀波動','上述任一症狀在 24 小時內起伏']];
+const IMS=[['0','0 無活動','躺在床上，被動運動或翻身'],['1','1 床上活動','床上翻身、橋式、主動運動、腳踏車'],['2','2 被動移到椅子','以機器或他人協助移到椅子，未站立'],['3','3 坐床緣','可坐在床緣，可能需協助'],['4','4 站立','以腳承重站立，可能需協助'],['5','5 床到椅移位','踏步或挪動移到椅子'],['6','6 原地踏步','原地抬腳至少 4 步'],['7','7 兩人協助行走','至少走 5 公尺'],['8','8 一人協助行走','至少走 5 公尺'],['9','9 使用輔具獨立行走','至少走 5 公尺'],['10','10 不用輔具獨立行走','至少走 5 公尺']];
+const MOB_SAFE=[['cv','心血管穩定','無新發心律不整或心肌缺血；升壓劑劑量未在增加；心率與血壓在院內安全範圍'],['resp','呼吸穩定','FiO₂ ≤0.6、PEEP ≤10 cmH₂O、SpO₂ ≥88–90%，呼吸次數可接受'],['neuro','神經狀態允許','無未控制的顱內壓升高或癲癇；可配合程度符合預計的活動'],['other','其他','無活動性出血、不穩定骨折；管路已妥善固定']];
+const SLEEP=[['noise','夜間降低噪音與光線，提供耳塞或眼罩'],['cluster','集中護理，減少夜間打擾'],['vent','插管病人夜間可考慮輔助控制模式','PADIS 2018'],['mela','考慮使用 melatonin','PADIS 2025：建議（條件式，低確定性）'],['noprop','不以 propofol 作為助眠用途','PADIS 2018']];
+const ANX=[['assess','以有效工具評估焦慮'],['music','音樂或虛擬實境等非藥物介入','PADIS 2025'],['family','家屬陪伴與說明病情']];
+const AGENTS=[['prop','Propofol'],['dex','Dexmedetomidine'],['bzd','Benzodiazepine 持續輸注'],['opioid','鴉片類持續輸注'],['none','目前沒有持續鎮靜']];
+
+/* ---------- 紀錄 ---------- */
+const K=(d,sh,b)=>d+'|'+sh+'|'+b;
+const newRec=()=>({vent:true,pain:{tool:'cpot',cpot:{},bps:{},nrs:null},rass:{v:null,target:'light',why:'',wiz:0},agents:{},cam:{f1:null,let:Array(10).fill(false),letDone:false,q:[null,null,null,null],cmd:null},icdsc:{},delTool:'cam',mob:{safe:{},ims:'',goal:''},sleep:{},anx:{},note:''});
+function prevRec(){ // 同床上一班，沿用插管狀態、鎮靜目標與藥物
+  const keys=Object.keys(S.rec).filter(k=>k.endsWith('|'+S.bed)).sort();
+  const cur=S.date+'|'+'DEN'.indexOf(S.shift);
+  let best=null;keys.forEach(k=>{const [d,sh]=k.split('|');const ord=d+'|'+'DEN'.indexOf(sh);if(ord<cur)best=S.rec[k];});
+  return best;
+}
+let R=null,RK='';
+function loadR(){
+  RK=K(S.date,S.shift,S.bed);
+  if(S.rec[RK]){R=S.rec[RK];return;}
+  R=newRec();const p=prevRec();
+  if(p){R.vent=p.vent;R.rass.target=p.rass.target;R.rass.why=p.rass.why;R.agents=Object.assign({},p.agents);R.mob.goal=p.mob.goal;R.delTool=p.delTool;R.pain.tool=p.pain.tool;}
+}
+function touch(){if(!S.rec[RK])S.rec[RK]=R;save();}
+
+/* ---------- 計算 ---------- */
+function painRes(r){
+  const p=r.pain;
+  if(p.tool==='nrs'){if(p.nrs==null)return null;return {score:p.nrs,max:10,pos:p.nrs>=4,label:'NRS',thr:'≥4 需處置'};}
+  const items=p.tool==='cpot'?CPOT:BPS,obj=p[p.tool];
+  if(items.some(i=>obj[i.k]==null))return null;
+  const s=items.reduce((a,i)=>a+obj[i.k]+(p.tool==='bps'?1:0),0);
+  return p.tool==='cpot'?{score:s,max:8,pos:s>=3,label:'CPOT',thr:'≥3 表示明顯疼痛'}:{score:s,max:12,pos:s>5,label:r.vent?'BPS':'BPS-NI',thr:'>5 表示明顯疼痛'};
+}
+function rassRes(r){
+  if(r.rass.v==null)return null;
+  const v=+r.rass.v,t=TARGETS[r.rass.target];
+  return {v,in:v>=t.lo&&v<=t.hi,deep:v<t.lo,agit:v>t.hi,t};
+}
+function camRes(r){
+  const c=r.cam,rv=r.rass.v==null?null:+r.rass.v;
+  if(rv==null)return {s:'needRass'};
+  if(rv<=-4)return {s:'utc'};
+  if(c.f1==null)return {s:'inc',at:1};
+  if(c.f1==='n')return {s:'neg',at:1,f:{1:'neg'}};
+  const errs=LET.reduce((a,l,i)=>a+((l==='A')!==c.let[i]?1:0),0);
+  if(!c.letDone)return {s:'inc',at:2,f:{1:'pos'},errs};
+  if(errs<=2)return {s:'neg',at:2,f:{1:'pos',2:'neg'},errs};
+  if(rv!==0)return {s:'pos',at:3,f:{1:'pos',2:'pos',3:'pos'},errs};
+  const qd=c.q.every(x=>x!=null)&&c.cmd!=null;
+  const e4=CAMQ.reduce((a,[,ans],i)=>a+(c.q[i]!=null&&c.q[i]!==ans?1:0),0)+(c.cmd==='err'?1:0);
+  if(!qd)return {s:'inc',at:4,f:{1:'pos',2:'pos',3:'neg'},errs,e4};
+  return {s:e4>1?'pos':'neg',at:4,f:{1:'pos',2:'pos',3:'neg',4:e4>1?'pos':'neg'},errs,e4};
+}
+function icdscRes(r){
+  const rv=r.rass.v==null?null:+r.rass.v;
+  if(rv!=null&&rv<=-4)return {s:'utc'};
+  const vals=ICDSC.map(([k])=>r.icdsc[k]);
+  if(vals.some(v=>v==null))return {s:'inc',score:vals.filter(v=>v===1).length};
+  const sc=vals.filter(v=>v===1).length;
+  return {s:sc>=4?'pos':sc>=1?'sub':'neg',score:sc};
+}
+function delRes(r){return r.delTool==='cam'?camRes(r):icdscRes(r);}
+const DEL_TXT={pos:'譫妄陽性',neg:'譫妄陰性',sub:'亞症候群譫妄',utc:'無法評估（RASS −4／−5）',inc:'評估未完成',needRass:'先完成 RASS'};
+function modState(r,m){
+  if(m==='P'){const p=painRes(r);return !p?'':p.pos?'alert':'ok';}
+  if(m==='S'){const x=rassRes(r);return !x?'':x.in?'ok':'alert';}
+  if(m==='D'){const d=delRes(r);return d.s==='pos'?'alert':d.s==='neg'?'ok':d.s==='sub'||d.s==='utc'?'part':'';}
+  if(m==='M'){return r.mob.ims!==''?'ok':'';}
+  if(m==='Z'){return Object.values(r.sleep).some(Boolean)?'ok':'';}
+  return '';
+}
+
+/* ---------- 模組 ---------- */
+const MODS=[['P','疼痛'],['S','鎮靜'],['D','譫妄'],['M','早期活動'],['Z','睡眠與焦慮']];
+const pr=(on)=>`aria-pressed="${!!on}"`;
+function ck(group,k,label,sub,kind){const on=!!R[group][k];const id=`c-${group}-${k}`;return `<label class="ck ${kind||'pos'}" for="${id}"><input type="checkbox" id="${id}" data-ck="${group}.${k}" ${on?'checked':''}><span>${esc(label)}${sub?`<small>${esc(sub)}</small>`:''}</span></label>`;}
+
+function modP(){
+  const p=R.pain,res=painRes(R);
+  let h=`<div class="modhead"><h2>疼痛評估</h2><span>每班常規評估，並在處置前後再評估</span></div>
+   <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
+    <div class="opts" role="group" aria-label="評估工具">${[['nrs','NRS（可自述）'],['cpot','CPOT'],['bps','BPS']].map(([k,l])=>`<button type="button" data-act="ptool:${k}" ${pr(p.tool===k)}>${l}</button>`).join('')}</div>
+    <label class="toggle"><input type="checkbox" data-vent ${R.vent?'checked':''}>插管中</label></div>`;
+  if(p.tool==='nrs'){
+    h+=`<div class="panel" style="display:grid;gap:8px"><span class="label">請病人以 0–10 分表示目前疼痛</span><div class="nrs">${Array.from({length:11},(_,i)=>`<button type="button" data-act="nrs:${i}" ${pr(p.nrs===i)}>${i}</button>`).join('')}</div><div class="nrs-l"><span>不痛</span><span>最痛</span></div></div>`;
+  }else{
+    const items=p.tool==='cpot'?CPOT:BPS,obj=p[p.tool],base=p.tool==='bps'?1:0;
+    h+=items.map(it=>{const use=(it.alt&&!R.vent)?it.alt:it;
+      return `<section class="item"><header><h3>${esc(use.t)}</h3><span class="num">${obj[it.k]!=null?(obj[it.k]+base)+' 分':''}</span></header><div class="choices">${use.o.map(([n,d],i)=>`<button type="button" class="choice" data-act="pi:${it.k}:${i}" ${pr(obj[it.k]===i)}><span class="sc">${i+base}</span><span class="nm">${esc(n)}</span>${d?`<span class="ds">${esc(d)}</span>`:''}</button>`).join('')}</div></section>`;}).join('');
+  }
+  if(res){
+    h+=`<div class="result ${res.pos?'alert':'ok'}"><div class="big">${res.label} ${res.score}<small> / ${res.max}　${res.thr}</small></div>`+
+     (res.pos?`<b>有明顯疼痛：先處理疼痛，再考慮鎮靜（analgesia-first）</b><ul>
+      <li>非神經性疼痛：鴉片類為第一線，以最低有效劑量開始。</li>
+      <li>多模式止痛以減少鴉片類：acetaminophen；術後可加低劑量 ketamine；神經性疼痛用 gabapentin、carbamazepine 或 pregabalin。</li>
+      <li>不建議常規使用 COX-1 選擇性 NSAID 作為輔助。</li>
+      <li>非藥物：按摩、音樂、冷敷（例如拔胸管前）、放鬆技巧。</li>
+      <li>侵入性處置前先給止痛；給藥後依藥效時間再評估。</li></ul>`:`<span>目前疼痛控制良好。處置前（翻身、抽痰、拔管路）仍需預先止痛並再評估。</span>`)+`</div>`;
+  }else h+=`<p class="note">完成所有項目後顯示分數與建議。</p>`;
+  return h;
+}
+function modS(){
+  const r=R.rass,res=rassRes(R),t=TARGETS[r.target];
+  let wiz='';
+  if(r.wiz===0)wiz=`<p class="q">步驟 1：觀察病人。病人是清醒、不安或躁動嗎？</p><div class="btns">${['+4','+3','+2','+1','0'].map(v=>{const x=RASS.find(a=>a[0]===v);return `<button type="button" data-act="rass:${v}"><b>${v}</b>${x[1]}</button>`;}).join('')}<button type="button" data-act="wiz:1">都不是，未清醒 →</button></div>`;
+  else if(r.wiz===1)wiz=`<p class="q">步驟 2：叫病人名字，請他睜眼看著你。</p><div class="btns"><button type="button" data-act="rass:-1"><b>−1</b>睜眼且眼神接觸 ≥10 秒</button><button type="button" data-act="rass:-2"><b>−2</b>眼神接觸 &lt;10 秒</button><button type="button" data-act="rass:-3"><b>−3</b>有動作或睜眼，沒有眼神接觸</button><button type="button" data-act="wiz:2">沒有反應 →</button></div><button type="button" class="linkbtn" data-act="wiz:0">回上一步</button>`;
+  else wiz=`<p class="q">步驟 3：搖晃肩膀或按壓胸骨。</p><div class="btns"><button type="button" data-act="rass:-4"><b>−4</b>有動作或睜眼</button><button type="button" data-act="rass:-5"><b>−5</b>沒有反應</button></div><button type="button" class="linkbtn" data-act="wiz:1">回上一步</button>`;
+  let h=`<div class="modhead"><h2>鎮靜評估（RASS）</h2><span>先設定目標，再評估目前分數</span></div>
+   <div class="split"><div class="fld"><label for="tgt">鎮靜目標</label><select id="tgt" data-sel="target">${Object.entries(TARGETS).map(([k,x])=>`<option value="${k}" ${r.target===k?'selected':''}>${x.t}：${x.d.split('（')[0]}</option>`).join('')}</select><span style="font-size:12.5px;color:var(--muted)">${esc(t.d)}</span></div>
+   ${r.target==='deep'?`<div class="fld"><label for="why">深鎮靜的適應症</label><select id="why" data-sel="why">${DEEP_WHY.map(w=>`<option value="${esc(w)}" ${r.why===w?'selected':''}>${w||'請選擇'}</option>`).join('')}</select></div>`:''}</div>
+   <div class="wiz">${wiz}</div>
+   <div class="rass" role="group" aria-label="RASS">${RASS.map(([v,n,d])=>{const nv=+v;const tg=nv>=t.lo&&nv<=t.hi;return `<button type="button" class="rrow${tg?' tgt':''}" data-act="rass:${v}" ${pr(r.v===v)}><span class="v">${v.replace('-','−')}</span><span class="n">${n}</span><span class="d">${d}</span></button>`;}).join('')}</div>`;
+  if(res){
+    const v=String(res.v).replace('-','−');
+    h+=`<div class="result ${res.in?'ok':'alert'}"><div class="big">RASS ${res.v>0?'+':''}${v}<small>　目標 ${t.d.split('（')[0]}</small></div>`+
+      (res.in?'<span>在目標範圍內。持續每班評估，並每日評估是否可做 SAT。</span>':
+       res.deep?`<b>比目標深</b><ul><li>減少鎮靜劑，或進行每日鎮靜中斷（SAT）。</li><li>確認是否仍需要持續鎮靜；止痛足夠時，許多病人可不需鎮靜劑。</li><li>RASS −4／−5 無法評估 CAM-ICU。</li></ul>`:
+       `<b>比目標躁動</b><ul><li>先評估並處理疼痛（CPOT／BPS）。</li><li>評估譫妄（CAM-ICU／ICDSC）與焦慮。</li><li>排除可逆原因：低血氧、低血糖、酒精或藥物戒斷、尿滯留、呼吸器不同步。</li><li>處理上述原因後，才調整鎮靜劑。</li></ul>`)+`</div>`;
+  }
+  const ag=R.agents;
+  let adv=[];
+  if(ag.bzd)adv.push('Benzodiazepine 持續輸注：PADIS 2018 建議改用 propofol 或 dexmedetomidine（條件式建議）。');
+  if(r.target!=='deep')adv.push('以淺鎮靜或降低譫妄為優先時，建議 dexmedetomidine 優於 propofol（PADIS 2025，條件式、中度確定性）。注意心搏過緩；心搏過緩風險高者改用其他藥物。');
+  else adv.push('需要深鎮靜時，dexmedetomidine 不適合，改用 propofol 等藥物（PADIS 2025 備註）。');
+  if(ag.opioid)adv.push('鴉片類持續輸注：採止痛優先的鎮靜（analgosedation），並每日評估減量。');
+  h+=`<section class="panel" style="display:grid;gap:10px"><span class="label">目前持續輸注的藥物</span><div class="cks" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">${AGENTS.map(([k,l])=>ck('agents',k,l)).join('')}</div>
+    <div class="note accent"><b>藥物選擇</b><ul>${adv.map(a=>`<li>${a}</li>`).join('')}</ul></div></section>`;
+  return h;
+}
+function modD(){
+  const tool=R.delTool;
+  let h=`<div class="modhead"><h2>譫妄評估</h2><span>每班評估；RASS −4／−5 時無法評估</span></div>
+   <div class="opts" role="group" aria-label="評估工具">${[['cam','CAM-ICU'],['icdsc','ICDSC']].map(([k,l])=>`<button type="button" data-act="dtool:${k}" ${pr(tool===k)}>${l}</button>`).join('')}</div>`;
+  const res=delRes(R);
+  if(res.s==='needRass')return h+`<p class="note">請先在「鎮靜」完成 RASS 評估。 <button type="button" class="linkbtn" data-act="tab:S">前往 RASS</button></p>`;
+  if(res.s==='utc')return h+`<div class="result part"><div class="big">無法評估</div><span>RASS −4 或 −5：病人無法配合評估。減輕鎮靜後再評估。</span></div>`;
+  if(tool==='cam'){
+    const c=R.cam,f=res.f||{},rv=+R.rass.v;
+    const st=i=>f[i]||(res.s==='inc'&&res.at===i?'cur':'skip');
+    const fs=s=>s==='pos'?'<span class="fs pos">陽性</span>':s==='neg'?'<span class="fs neg">陰性</span>':s==='cur'?'<span class="fs cur">評估中</span>':'';
+    const errs=LET.reduce((a,l,i)=>a+((l==='A')!==c.let[i]?1:0),0);
+    h+=`<div>
+     <section class="feat" data-s="${st(1)}"><div class="fnode">1</div><div class="fcard"><h3>急性精神狀態改變或起伏 ${fs(st(1))}</h3>
+      <p style="font-size:14px;color:var(--muted)">與平時相比有急性改變嗎？或過去 24 小時內，RASS、GCS 或先前的譫妄評估有起伏嗎？</p>
+      <div class="yn">${[['y','是'],['n','否']].map(([v,l])=>`<button type="button" data-act="f1:${v}" ${pr(c.f1===v)}>${l}</button>`).join('')}</div></div></section>
+     <section class="feat" data-s="${st(2)}"><div class="fnode">2</div><div class="fcard"><h3>注意力不集中 ${fs(st(2))}</h3>
+      ${(f[1]==='pos')?`<p style="font-size:14px;color:var(--muted)">告訴病人：「我會唸 10 個字母，聽到 A 就握我的手。」以一般音量、每秒一個唸出。點選病人<b>有握手</b>的字母：</p>
+      <div class="letters">${LET.map((l,i)=>`<button type="button" class="${l==='A'?'isA':''}" data-act="let:${i}" ${pr(c.let[i])} aria-label="字母 ${l}${c.let[i]?'，有握手':''}"><b>${l}</b><small>${c.let[i]?'握':'—'}</small></button>`).join('')}</div>
+      <div class="qrow"><span class="errs">錯誤 ${errs} 個（聽到 A 沒握＋非 A 卻握）；&gt;2 個為陽性</span>${c.letDone?'<button type="button" class="linkbtn" data-act="letUndo">修改</button>':'<button type="button" class="btn small primary" data-act="letDone">完成字母測試</button>'}</div>
+      <small style="color:var(--muted)">中文版可依院內核可版本改用數字或其他字串。</small>`:'<p style="font-size:14px">特徵 1 為陽性時才評估。</p>'}</div></section>
+     <section class="feat" data-s="${st(3)}"><div class="fnode">3</div><div class="fcard"><h3>意識程度改變 ${fs(st(3))}</h3>
+      <p style="font-size:14px;color:var(--muted)">目前 RASS ${rv>0?'+':''}${String(rv).replace('-','−')}：RASS 不是 0 即為陽性（自動判斷）。</p></div></section>
+     <section class="feat" data-s="${st(4)}"><div class="fnode">4</div><div class="fcard"><h3>思考紊亂 ${fs(st(4))}</h3>
+      ${res.at===4?`<div class="qs">${CAMQ.map(([q],i)=>`<div class="qrow"><span>${i+1}. ${q}</span><div class="yn">${[['y','是'],['n','否']].map(([v,l])=>`<button type="button" data-act="q:${i}:${v}" ${pr(c.q[i]===v)}>${l}</button>`).join('')}</div></div>`).join('')}
+       <div class="qrow"><span>指令：「舉起這麼多根手指」（評估者舉 2 根，病人看），再說「換另一隻手做一樣的動作」（不示範）</span><div class="yn"><button type="button" data-act="cmd:ok" ${pr(c.cmd==='ok')}>正確</button><button type="button" data-act="cmd:err" ${pr(c.cmd==='err')}>錯誤</button></div></div>
+       <span class="errs">錯誤 ${res.e4??0} 個；&gt;1 個為陽性</span></div>`:'<p style="font-size:14px">只有在特徵 1、2 陽性且 RASS = 0 時評估。</p>'}</div></section></div>`;
+  }else{
+    const sc=res.score;
+    h+=`<p class="note">依過去一班（8–24 小時）的觀察，每項有出現記 1 分。</p><div class="icdsc">${ICDSC.map(([k,t,d])=>`<div class="irow"><span>${t}<small>${d}</small></span><div class="yn">${[[0,'無'],[1,'有']].map(([v,l])=>`<button type="button" data-act="ic:${k}:${v}" ${pr(R.icdsc[k]===v)}>${l}</button>`).join('')}</div></div>`).join('')}</div>`;
+    if(res.s==='inc')h+=`<span class="errs">目前 ${sc} 分，尚有項目未評</span>`;
+  }
+  if(['pos','neg','sub'].includes(res.s)){
+    const pos=res.s==='pos';
+    h+=`<div class="result ${pos?'alert':res.s==='sub'?'part':'ok'}"><div class="big">${DEL_TXT[res.s]}${tool==='icdsc'?`<small>　ICDSC ${res.score} 分（≥4 譫妄，1–3 亞症候群）</small>`:''}</div>`+
+      (pos||res.s==='sub'?`<ul><li>找出並處理誘發因素：感染、低血氧、代謝異常、疼痛、尿滯留、便秘、藥物（benzodiazepine、抗膽鹼藥）、戒斷。</li>
+      <li>非藥物多元介入：重新定向、認知刺激、改善睡眠、早期活動、提供眼鏡與助聽器、家屬參與。</li>
+      <li>抗精神病藥物：PADIS 2025 無法建議使用或不使用（低確定性）；有明顯困擾症狀（害怕、幻覺、躁動）時可短期使用，症狀緩解後停藥。</li>
+      <li>躁動型譫妄妨礙脫離呼吸器時，可考慮 dexmedetomidine（PADIS 2018）。</li>
+      <li>不建議常規用藥物預防譫妄。</li></ul>`:`<span>未發現譫妄。持續非藥物預防：定向、睡眠、活動、眼鏡與助聽器。</span>`)+`</div>`;
+  }
+  return h;
+}
+function modM(){
+  const m=R.mob,allSafe=MOB_SAFE.every(([k])=>m.safe[k]);
+  return `<div class="modhead"><h2>早期活動</h2><span>PADIS 2018 ＋ 2025</span></div>
+   <section class="panel" style="display:grid;gap:8px"><span class="label">活動前安全評估（依 Hodgson 2014 共識，範圍依院內規範）</span><div class="cks">${MOB_SAFE.map(([k,l,s])=>{const id='m-'+k;return `<label class="ck pos" for="${id}"><input type="checkbox" id="${id}" data-mob="${k}" ${m.safe[k]?'checked':''}><span>${l}<small>${s}</small></span></label>`;}).join('')}</div>
+   <div class="note ${allSafe?'accent':''}">${allSafe?'<b>可以開始活動。</b>':'全部符合後再開始主動活動；不符合時可做被動關節運動。'}</div></section>
+   <div class="split"><div class="fld"><label for="ims">今日最高活動等級（ICU Mobility Scale）</label><select id="ims" data-msel="ims"><option value="">未評估</option>${IMS.map(([v,t,d])=>`<option value="${v}" ${m.ims===v?'selected':''}>${t}：${d}</option>`).join('')}</select></div>
+   <div class="fld"><label for="goal">明日目標</label><select id="goal" data-msel="goal"><option value="">未設定</option>${IMS.map(([v,t])=>`<option value="${v}" ${m.goal===v?'selected':''}>${t}</option>`).join('')}</select></div></div>
+   <div class="note accent"><b>加強版活動復健（PADIS 2025：建議，條件式、中度確定性）</b><ul><li>更早開始、每天兩次、依流程逐步進階。</li><li>可加入床上腳踏車（cycle ergometry）。</li><li>心律不整風險略增，活動中監測生命徵象。</li></ul></div>
+   <div class="note"><b>活動中出現下列情形時停止</b><ul><li>新發心律不整、胸痛或心肌缺血徵象</li><li>SpO₂ 持續下降、呼吸窘迫或呼吸器不同步</li><li>血壓或心率明顯偏離安全範圍</li><li>躁動、意識改變、跌倒或管路滑脫</li></ul></div>`;
+}
+function modZ(){
+  return `<div class="modhead"><h2>睡眠與焦慮</h2><span>PADIS 2018 ＋ 2025</span></div>
+   <section class="panel" style="display:grid;gap:8px"><span class="label">睡眠</span><div class="cks">${SLEEP.map(([k,l,s])=>ck('sleep',k,l,s)).join('')}</div></section>
+   <section class="panel" style="display:grid;gap:8px"><span class="label">焦慮（2025 新增主題）</span><div class="cks">${ANX.map(([k,l,s])=>ck('anx',k,l,s)).join('')}</div>
+   <div class="note">以 benzodiazepine 治療焦慮：PADIS 2025 認為證據不足，無法提出建議。</div></section>
+   <section class="panel" style="display:grid;gap:6px"><label class="label" for="note">備註</label><textarea class="note-in" id="note" data-note placeholder="例：家屬會談、特殊處置">${esc(R.note)}</textarea></section>`;
+}
+
+/* ---------- 側欄 ---------- */
+const shName=s=>(SHIFTS.find(x=>x[0]===s)||['',''])[1];
+function sumLines(r){
+  const p=painRes(r),x=rassRes(r),d=delRes(r);
+  return {
+    P:p?{t:`${p.label} ${p.score}${p.pos?'（明顯疼痛）':''}`,c:p.pos?'alert':'ok'}:{t:'未評估',c:'na'},
+    S:x?{t:`RASS ${x.v>0?'+':''}${String(x.v).replace('-','−')}（目標${x.t.t}${x.in?'，達標':x.deep?'，過深':'，過躁動'}）`,c:x.in?'ok':'alert'}:{t:'未評估',c:'na'},
+    D:{t:(r.delTool==='cam'?'CAM-ICU ':'ICDSC ')+DEL_TXT[d.s]+(d.score!=null&&r.delTool==='icdsc'?`（${d.score} 分）`:''),c:d.s==='pos'?'alert':d.s==='neg'?'ok':d.s==='sub'||d.s==='utc'?'part':'na'},
+    M:r.mob.ims!==''?{t:`IMS ${r.mob.ims}${r.mob.goal!==''?'，明日目標 '+r.mob.goal:''}`,c:'ok'}:{t:'未評估',c:'na'}
+  };
+}
+function summaryText(){
+  const s=sumLines(R);
+  const L=[`【床 ${S.bed}】${S.date} ${shName(S.shift)} PADIS 評估`,`疼痛：${s.P.t}`,`鎮靜：${s.S.t}`];
+  const ag=AGENTS.filter(([k])=>R.agents[k]&&k!=='none').map(a=>a[1]);if(ag.length)L.push('持續輸注：'+ag.join('、'));
+  L.push(`譫妄：${s.D.t}`,`活動：${s.M.t}`);
+  const sl=SLEEP.filter(([k])=>R.sleep[k]).map(a=>a[1]);if(sl.length)L.push('睡眠：'+sl.join('；'));
+  if(R.note)L.push('備註：'+R.note);
+  return L.join('\n');
+}
+function renderSide(){
+  const s=sumLines(R);
+  const keys=Object.keys(S.rec).filter(k=>k.endsWith('|'+S.bed)).map(k=>{const [d,sh]=k.split('|');return {k,d,sh,ord:d+'|'+'DEN'.indexOf(sh)};}).sort((a,b)=>b.ord.localeCompare(a.ord)).slice(0,9);
+  const cell=(r,m)=>{const x=sumLines(r)[m];const short=m==='P'?(painRes(r)?.score??'—'):m==='S'?(r.rass.v??'—'):m==='D'?({pos:'+',neg:'−',sub:'亞',utc:'無法',inc:'…',needRass:'…'}[delRes(r).s]):(r.mob.ims||'—');return `<td class="${x.c==='alert'?'alert':''}">${String(short).replace('-','−')}</td>`;};
+  $('#side').innerHTML=`<section class="panel" style="display:grid;gap:10px">
+    <h2>床 ${esc(S.bed)} · ${S.date.slice(5)} ${shName(S.shift)}</h2>
+    <div class="sum">${[['P','疼痛'],['S','鎮靜'],['D','譫妄'],['M','活動']].map(([k,l])=>`<div class="srow"><span class="k">${l}</span><span class="v ${s[k].c}">${esc(s[k].t)}</span></div>`).join('')}</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button type="button" class="btn small" data-act="copy">複製本班摘要</button><span class="toast" id="toast" aria-live="polite"></span></div>
+    <textarea class="buf" id="buf" hidden readonly aria-label="摘要"></textarea></section>
+   <section class="panel" style="display:grid;gap:8px"><h2>近 9 班趨勢</h2>
+    ${keys.length?`<div class="trend-wrap"><table><thead><tr><th>班別</th><th>疼痛</th><th>RASS</th><th>譫妄</th><th>IMS</th></tr></thead><tbody>${keys.map(o=>{const r=S.rec[o.k];return `<tr><td class="num">${o.d.slice(5)} ${shName(o.sh)}</td>${cell(r,'P')}${cell(r,'S')}${cell(r,'D')}${cell(r,'M')}</tr>`;}).join('')}</tbody></table></div>`:'<p style="font-size:13.5px;color:var(--muted)">尚無紀錄</p>'}
+   </section>
+   <section class="panel" style="display:grid;gap:10px">
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><button type="button" class="btn small danger" data-act="clearAsk">新病人（清除此床）</button>
+    <span class="confirm" id="clear-confirm" hidden>確定清除床 ${esc(S.bed)} 的全部紀錄？<button type="button" class="btn small danger" data-act="clearYes">清除</button><button type="button" class="btn small" data-act="clearNo">取消</button></span></div>
+    <details><summary style="cursor:pointer;font-weight:700">床號設定</summary><div class="fld" style="margin-top:8px"><label for="set-beds">床號（逗號或空白分隔）</label><input id="set-beds" style="width:100%;border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:6px 9px" value="${esc(S.beds.join(', '))}"></div><button type="button" class="btn small primary" style="margin-top:8px" data-act="saveBeds">儲存</button></details>
+   </section>`;
+}
+
+/* ---------- 渲染 ---------- */
+function renderBeds(){
+  $('#beds').innerHTML=S.beds.map(b=>{
+    const r=S.rec[K(S.date,S.shift,b)];let cls='',lab='—';
+    if(r){const ps=painRes(r),d=delRes(r),x=rassRes(r);
+      const alerts=[ps&&ps.pos&&'痛',d.s==='pos'&&'譫妄',x&&!x.in&&'RASS'].filter(Boolean);
+      if(alerts.length){cls='s-alert';lab=alerts.join('·');}
+      else if(ps&&x&&['neg','utc','sub'].includes(d.s)){cls='s-ok';lab='已評估';}
+      else{cls='s-part';lab='評估中';}}
+    return `<button type="button" class="bedbtn ${cls}" data-bed="${esc(b)}" aria-current="${b===S.bed}">${esc(b)}<small>${lab}</small></button>`;
+  }).join('');
+  $('#shifts').innerHTML=SHIFTS.map(([k,l])=>`<button type="button" data-shift="${k}" ${pr(S.shift===k)}>${l}</button>`).join('');
+  $('#date').value=S.date;
+}
+function render(){
+  const a=document.activeElement;let fk=null;
+  if(a&&a.id)fk='#'+CSS.escape(a.id);else if(a&&a.dataset&&a.dataset.act)fk=`[data-act="${a.dataset.act}"]`;
+  loadR();
+  renderBeds();
+  $('#tabs').innerHTML=MODS.map(([k,l])=>`<button type="button" role="tab" class="tab" data-tab="${k}" aria-selected="${S.tab===k}"><b>${k}</b>${l}<i class="${modState(R,k)}"></i></button>`).join('');
+  $('#mod').innerHTML=`<div class="mod">${{P:modP,S:modS,D:modD,M:modM,Z:modZ}[S.tab]()}</div>`;
+  renderSide();
+  const el=fk&&$(fk);if(el)el.focus({preventScroll:true});
+}
+
+/* ---------- 事件 ---------- */
+document.addEventListener('click',e=>{
+  const t=e.target;
+  const bb=t.closest('[data-bed]');if(bb){S.bed=bb.dataset.bed;save();render();return;}
+  const sh=t.closest('[data-shift]');if(sh){S.shift=sh.dataset.shift;render();return;}
+  const tb=t.closest('[data-tab]');if(tb){S.tab=tb.dataset.tab;save();render();return;}
+  const a=t.closest('[data-act]');if(!a)return;
+  const [act,x,y]=a.dataset.act.split(':');
+  if(act==='ptool'){R.pain.tool=x;}
+  else if(act==='nrs'){R.pain.nrs=R.pain.nrs===+x?null:+x;}
+  else if(act==='pi'){const o=R.pain[R.pain.tool];o[x]=o[x]===+y?null:+y;}
+  else if(act==='rass'){R.rass.v=R.rass.v===x?null:x;R.rass.wiz=0;}
+  else if(act==='wiz'){R.rass.wiz=+x;}
+  else if(act==='dtool'){R.delTool=x;}
+  else if(act==='f1'){R.cam.f1=R.cam.f1===x?null:x;}
+  else if(act==='let'){R.cam.let[+x]=!R.cam.let[+x];R.cam.letDone=false;}
+  else if(act==='letDone'){R.cam.letDone=true;}
+  else if(act==='letUndo'){R.cam.letDone=false;}
+  else if(act==='q'){R.cam.q[+x]=R.cam.q[+x]===y?null:y;}
+  else if(act==='cmd'){R.cam.cmd=R.cam.cmd===x?null:x;}
+  else if(act==='ic'){R.icdsc[x]=R.icdsc[x]===+y?null:+y;}
+  else if(act==='tab'){S.tab=x;save();render();return;}
+  else if(act==='copy'){copyText(summaryText());return;}
+  else if(act==='clearAsk'){$('#clear-confirm').hidden=false;a.hidden=true;return;}
+  else if(act==='clearNo'){$('#clear-confirm').hidden=true;$('[data-act="clearAsk"]').hidden=false;return;}
+  else if(act==='clearYes'){Object.keys(S.rec).filter(k=>k.endsWith('|'+S.bed)).forEach(k=>delete S.rec[k]);save();render();return;}
+  else if(act==='saveBeds'){const b=$('#set-beds').value.split(/[,，\s]+/).map(v=>v.trim()).filter(Boolean);if(b.length){S.beds=[...new Set(b)];if(!S.beds.includes(S.bed))S.bed=S.beds[0];}save();render();return;}
+  else return;
+  touch();render();
+});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.id==='date'){if(t.value){S.date=t.value;render();}return;}
+  if(t.matches('[data-vent]'))R.vent=t.checked;
+  else if(t.matches('[data-ck]')){const [g,k]=t.dataset.ck.split('.');R[g][k]=t.checked;if(g==='agents'&&k==='none'&&t.checked)AGENTS.forEach(([a])=>{if(a!=='none')R.agents[a]=false;});if(g==='agents'&&k!=='none'&&t.checked)R.agents.none=false;}
+  else if(t.matches('[data-mob]'))R.mob.safe[t.dataset.mob]=t.checked;
+  else if(t.matches('[data-msel]'))R.mob[t.dataset.msel]=t.value;
+  else if(t.matches('[data-sel]'))R.rass[t.dataset.sel]=t.value;
+  else return;
+  touch();render();
+});
+document.addEventListener('input',e=>{if(e.target.matches('[data-note]')){R.note=e.target.value;touch();}});
+function copyText(text){
+  const toast=$('#toast'),buf=$('#buf');
+  const ok=()=>{toast.textContent='已複製';setTimeout(()=>{const t=$('#toast');if(t)t.textContent='';},2000);};
+  const fail=()=>{buf.value=text;buf.hidden=false;buf.select();toast.textContent='無法自動複製，請手動複製下方文字';};
+  try{navigator.clipboard.writeText(text).then(ok,fail);}catch(e){fail();}
+}
+render();
+})();
+</script>
+</body>
+</html>
