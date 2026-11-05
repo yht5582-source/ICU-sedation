@@ -239,15 +239,22 @@ footer ol{margin:0;padding-left:20px;display:grid;gap:3px}
 .mm-root{position:sticky;top:calc(var(--strip-h,60px) + 12px);display:grid;gap:4px;justify-items:center;text-align:center;background:var(--accent);color:var(--accent-ink);border-radius:12px;padding:16px 8px;font-size:13px}
 .mm-root b{font-family:var(--f-label);font-size:22px}
 .mm-bs{display:grid;gap:12px;position:relative;border-left:2px solid var(--line);padding-left:18px}
-.mm-b{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:8px}
+.mm-tools{display:flex;gap:6px;margin-bottom:12px}
+.mm-b{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.mm summary{display:flex;align-items:center;gap:8px;cursor:pointer;list-style:none}
+.mm summary::-webkit-details-marker{display:none}
+.mm summary::before{content:"";flex:none;width:7px;height:7px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);transition:transform .15s}
+.mm details[open]>summary::before{transform:rotate(45deg)}
+.mm-b>summary h3{flex:1;min-width:0}
+.mm-b[open]>summary{margin-bottom:8px}
 .mm-b::before{content:"";position:absolute;left:-19px;top:24px;width:18px;height:2px;background:var(--line)}
 .mm-b h3{display:flex;align-items:center;gap:8px;font-size:15.5px;font-weight:700}
 .mm-b h3 b{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font-family:var(--f-label)}
 .mm-b h3 .linkbtn{margin-left:auto;font-weight:400}
-.mm-gs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px}
+.mm-gs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px;align-items:start}
 .mm-g{background:var(--surface-2);border-radius:8px;padding:8px 10px}
-.mm-g h4{margin:0 0 4px;font-size:13px;color:var(--muted);font-family:var(--f-label);letter-spacing:.04em}
-.mm-g ul{margin:0;padding-left:16px;display:grid;gap:3px;font-size:13.5px}
+.mm-g h4{margin:0;font-size:13px;color:var(--muted);font-family:var(--f-label);letter-spacing:.04em}
+.mm-g ul{margin:4px 0 0;padding-left:16px;display:grid;gap:3px;font-size:13.5px}
 @media (max-width:820px){.mm{grid-template-columns:1fr;gap:12px}.mm-root{position:static;grid-auto-flow:column;justify-content:start;gap:12px;padding:10px 14px;text-align:left}.mm-root br{display:none}.mm-bs{padding-left:14px}.mm-b::before{left:-15px;width:14px}}
 @media (max-width:560px){.strip{position:static}.brand p{display:none}.qscore{top:0}.choices{grid-template-columns:1fr}.choice{border-right:0}}
 @media print{.strip{position:static}.side{position:static;max-height:none}}
@@ -577,7 +584,7 @@ const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 const SHIFTS=[['N','大夜'],['D','白班'],['E','小夜']];
 const liveShift=()=>({date:ymd(new Date()),shift:curShift(new Date().getHours())});
 let S,storeFail=false,DEMO=null,wizStep=0;
-const QA={};
+const QA={},MMC={}; // MMC：心智圖已收合的節點，只存在記憶體
 try{S=normStore(JSON.parse(localStorage.getItem(KEY)||'{}'));}catch(e){S=normStore({});}
 Object.assign(S,liveShift());
 function save(){try{localStorage.setItem(KEY,JSON.stringify({beds:S.beds,bed:S.bed,tab:S.tab,rec:S.rec}));storeFail=false;}catch(e){storeFail=true;}}
@@ -853,8 +860,9 @@ function viewQuiz(){
    <div class="qscore" aria-live="polite"><span>已答 <b class="num">${n}</b> / ${Q.length}　答對 <b class="num">${ok}</b></span><button type="button" class="btn small" data-act="qreset">重新作答</button></div>${sec('基礎')}${sec('高階')}`;
 }
 function viewMap(){
-  return `<div class="thead"><h2>心智圖</h2><p>PADIS 重點總覽。標籤是出處：2018、2025 為 SCCM 指引；Hodgson 為 2014 活動安全共識；手冊為 CAM-ICU 操作手冊。</p></div>
-   <div class="mm"><div class="mm-root"><b>PADIS</b><span>ICU 成人<br>每班評估</span></div><div class="mm-bs">${TEACH.MAP.map(b=>`<section class="mm-b"><h3><b>${b.k}</b>${esc(b.t)}<button type="button" class="linkbtn" data-act="go:${b.go}">開啟工具</button></h3><div class="mm-gs">${b.g.map(([t,it])=>`<div class="mm-g"><h4>${esc(t)}</h4><ul>${it.map(([s,src])=>`<li>${esc(s)}<span class="tag">${esc(src)}</span></li>`).join('')}</ul></div>`).join('')}</div></section>`).join('')}</div></div>`;
+  return `<div class="thead"><h2>心智圖</h2><p>PADIS 重點總覽，點標題可開合。標籤是出處：2018、2025 為 SCCM 指引；Hodgson 為 2014 活動安全共識；手冊為 CAM-ICU 操作手冊。</p></div>
+   <div class="mm-tools"><button type="button" class="btn small" data-act="mmAll:1">全部展開</button><button type="button" class="btn small" data-act="mmAll:0">全部收合</button></div>
+   <div class="mm"><div class="mm-root"><b>PADIS</b><span>ICU 成人<br>每班評估</span></div><div class="mm-bs">${TEACH.MAP.map(b=>`<details class="mm-b" data-mm="${b.k}" ${MMC[b.k]?'':'open'}><summary><h3><b>${b.k}</b>${esc(b.t)}<button type="button" class="linkbtn" data-act="go:${b.go}">開啟工具</button></h3></summary><div class="mm-gs">${b.g.map(([t,it],i)=>{const id=b.k+i;return `<details class="mm-g" data-mm="${id}" ${MMC[id]?'':'open'}><summary><h4>${esc(t)}</h4></summary><ul>${it.map(([s,src])=>`<li>${esc(s)}<span class="tag">${esc(src)}</span></li>`).join('')}</ul></details>`;}).join('')}</div></details>`).join('')}</div></div>`;
 }
 
 /* ---------- 事件 ---------- */
@@ -894,6 +902,7 @@ document.addEventListener('click',e=>{
   else if(act==='demoEnd'){DEMO=null;render();return;}
   else if(act==='load'){const c=TEACH.CASES.find(z=>z.id===x);if(c){DEMO={title:c.title,rec:PADIS.caseRec(c.patch)};wizStep=0;S.tab='P';location.hash='#tool';render();scrollTo(0,0);}return;}
   else if(act==='go'){S.tab=x;DEMO=null;save();location.hash='#tool';render();scrollTo(0,0);return;}
+  else if(act==='mmAll'){$$('[data-mm]').forEach(d=>{d.open=x==='1';});return;}
   else if(act==='qa'){if(QA[+x]==null){QA[+x]=+y;render();}return;}
   else if(act==='qreset'){Object.keys(QA).forEach(k=>delete QA[k]);render();scrollTo(0,0);return;}
   else if(act==='saveBeds'){const b=$('#set-beds').value.split(/[,，\s]+/).map(v=>v.trim().replace(/\|/g,'')).filter(Boolean);if(b.length){S.beds=[...new Set(b)];if(!S.beds.includes(S.bed))S.bed=S.beds[0];}save();render();return;}
@@ -924,6 +933,7 @@ document.addEventListener('keydown',e=>{
   S.tab=e.key==='Home'?ks[0]:e.key==='End'?ks[ks.length-1]:ks[(i+(e.key==='ArrowRight'?1:ks.length-1))%ks.length];
   save();render();$('#tab-'+S.tab).focus();
 });
+document.addEventListener('toggle',e=>{const d=e.target;if(d.dataset&&d.dataset.mm)MMC[d.dataset.mm]=!d.open;},true);
 addEventListener('hashchange',()=>{render();scrollTo(0,0);});
 addEventListener('visibilitychange',()=>{if(!document.hidden)renderNotice();});
 setInterval(renderNotice,60000); // 頁面開著跨班時提醒，不自動切換以免寫錯班
